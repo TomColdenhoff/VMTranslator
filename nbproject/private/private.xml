@@ -5,8 +5,7 @@
         <group>
             <file>file:/C:/Users/tomco/Documents/nand2tetris/nand2tetris/VMTranslator/src/vmtranslator/VMTranslator.java</file>
             <file>file:/C:/Users/tomco/Documents/nand2tetris/nand2tetris/VMTranslator/src/vmtranslator/codewriting/CodeWriter.java</file>
-            <file>file:/C:/Users/tomco/Documents/nand2tetris/nand2tetris/VMTranslator/src/vmtranslator/codewriting/Templates.java</file>
-            <file>file:/C:/Users/tomco/Documents/nand2tetris/nand2tetris/VMTranslator/src/vmtranslator/parsing/CommandType.java</file>
+            <file>file:/C:/Users/tomco/Documents/nand2tetris/nand2tetris/VMTranslator/src/vmtranslator/parsing/Parser.java</file>
         </group>
     </open-files>
 </project-private>

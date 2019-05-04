@@ -22,21 +22,21 @@ import vmtranslator.parsing.CommandType;
 public class CodeWriter {
     
     private BufferedWriter writer = null;
-    
+    private int returnLabel = 0;
+
     /**
-     * Constructor opens the output file and prepares it for writing.
-     * @param filename The filename for the output file.
+     * Informs the {@link CodeWriter that the translation of a new VM file has
+     * started(called by the main program of the VM translator).
+     * @param fileName 
      */
-    public CodeWriter(String filename) {
-        
-        File file = new File(filename + ".asm");
+    public void setFileName(String fileName) {
+        File file = new File(fileName + ".asm");
         
         try {
             writer = new BufferedWriter(new FileWriter(file));
         } catch (IOException ex) {
             Logger.getLogger(CodeWriter.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
     }
     
     /**
@@ -63,6 +63,261 @@ public class CodeWriter {
         } catch (IOException ex) {
             Logger.getLogger(CodeWriter.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    /**
+     * Writes the assembly instruction that effect the bootstrap code that
+     * initializes the VM. This generated code must be placed at the beginning
+     * of the generated *.asm file.
+     */
+    public void writeInit() {
+        String initLines[] = {
+            "@256",
+            "D=A",
+            "@SP",
+            "M=D"
+        };
+        
+        write(initLines);
+        writeCall("Sys.init", 0);
+    }
+    
+    /**
+     * Writes assembly code that effect the label command.
+     * @param label The label name.
+     */
+    public void writeLabel(String label) {
+        String labelCommand[] = {
+            "(" + label + ")"
+        };
+        
+        write(labelCommand);
+    }
+    
+    /**
+     * Writes assembly code that effects the goto command.
+     * @param label The label to go to.
+     */
+    public void writeGoto(String label) {
+        String gotoCommand[] = {
+            "@" + label,
+            "0;JMP"
+        };
+        
+        write(gotoCommand);
+    }
+
+    /**
+     * Writes assembly code that effect the if-goto command
+     * @param label The label to go to.
+     */
+    public void writeIf(String label) {
+        String ifCommand[] = {
+            "@SP",
+            "AM=M-1",
+            "D=M",
+            "A=A-1",
+            "@" + label,
+            "D;JNE"
+        };
+        
+        write(ifCommand);
+    }
+        
+    /**
+     * Writes the assembly code that effects the function command.
+     * @param functionName The name of the function.
+     * @param numVars The amount of local variables the function uses.
+     */
+    public void writeFunction(String functionName, int numVars) {
+        
+        String functionCommand[] = {
+            "(" + functionName + ")",
+        };
+        
+        write(functionCommand);
+        
+        // Write space for local variables
+        for (int i = 0; i < numVars; i++) {
+            writePushPop(CommandType.C_PUSH, "constant", 0);
+        }
+        
+    }
+    
+    /**
+     * Writes assembly code that effects the call command.
+     * @param functionName The name of the function to call.
+     * @param numArgs The amount of arguments the function takes.
+     */
+    public void writeCall(String functionName, int numArgs) {
+        
+        // Save calling function
+        String saveCommand[] = {
+            "@return-address" + returnLabel,
+            "D=A",
+        };
+        
+        write(saveCommand);
+        write(Templates.getFinishPushTemplate());
+        
+        // Save local addres
+        String lclCommand[] = {
+            "@LCL",
+            "D=M",
+        };
+        
+        write(lclCommand);
+        write(Templates.getFinishPushTemplate());
+        
+        // Save arg addres
+        String argCommand[] = {
+            "@ARG",
+            "D=M",
+        };
+        
+        write(argCommand);
+        write(Templates.getFinishPushTemplate());
+        
+        // Save this addres
+        String thisCommand[] = {
+            "@THIS",
+            "D=M",
+        };
+        
+        write(thisCommand);
+        write(Templates.getFinishPushTemplate());
+        
+        // Save that addres
+        String thatCommand[] = {
+            "@THAT",
+            "D=M",
+        };
+        
+        write(thatCommand);
+        write(Templates.getFinishPushTemplate());
+        
+        // Reposition ARG
+        String argRepositionCommand[] = {
+            "@SP",
+            "D=M",
+            "@" + numArgs,
+            "D=D-A",
+            "@5",
+            "D=D-A",
+            "@ARG",
+            "M=D"
+        };
+        
+        write(argRepositionCommand);
+        
+        // Reposition LCL
+        String lclRepositionCommand[] = {
+            "@SP",
+            "D=M",
+            "@LCL",
+            "M=D"
+        };
+        
+        write(lclRepositionCommand);
+        
+        // transfer control
+        writeGoto(functionName);
+        
+        // declare return address label
+        writeLabel("return-address" + returnLabel);
+        
+        returnLabel++;
+    }
+    
+    /**
+     * Writes assembly code that effects the return command.
+     */
+    public void writeReturn() {
+        
+        String frameLCLCommand[] = {
+            "@LCL",
+            "D=M",
+            "@FRAME",
+            "M=D"
+        };
+        write(frameLCLCommand);
+        
+        String frameRETCommand[] = {
+            "@5",
+            "A=D-A",
+            "D=M",
+            "@RET",
+            "M=D"
+        };
+        write(frameRETCommand);
+
+        String popARGCommand[] = {
+            "@SP",
+            "AM=M-1",
+            "D=M",
+            "@ARG",
+            "A=M",
+            "M=D"
+        };
+        write(popARGCommand);
+        
+        String spRestoreCommand[] = {
+            "@ARG",
+            "D=M+1",
+            "@SP",
+            "M=D"
+        };
+        write(spRestoreCommand);
+
+        String thatRestoreCommand[] = {
+            "@FRAME",
+            "A=M-1",
+            "D=M",
+            "@THAT",
+            "M=D"
+        };
+        write(thatRestoreCommand);
+
+        String thisRestoreCommand[] = {
+            "@FRAME",
+            "D=M",
+            "@2",
+            "A=D-A",
+            "D=M",
+            "@THIS",
+            "M=D"
+        };
+        write(thisRestoreCommand);
+        
+        String argRestoreCommand[] = {
+            "@FRAME",
+            "D=M",
+            "@3",
+            "A=D-A",
+            "D=M",
+            "@ARG",
+            "M=D"
+        };
+        write(argRestoreCommand);
+
+        String lclRestoreCommand[] = {
+            "@FRAME",
+            "D=M",
+            "@4",
+            "A=D-A",
+            "D=M",
+            "@LCL",
+            "M=D"
+        };
+        
+        write(lclRestoreCommand);
+        
+        String gotoCommand[] = {
+            "@RET",
+            "A=M",
+            "0;JMP"
+        };
+        write(gotoCommand);
     }
     
     /**

@@ -56,6 +56,22 @@ public class Templates {
     }
     
     /**
+     * Returns the command for the last part of a push operation.
+     * @return last part of a push operation in HACK asm
+     */
+    public static String[] getFinishPushTemplate() {
+        String template[] = {
+            "@SP",
+            "A=M",
+            "M=D",
+            "@SP",
+            "M=M+1"
+        };
+        
+        return template;
+    }
+    
+    /**
      * 
      * @param segment
      * @param index
@@ -112,20 +128,20 @@ public class Templates {
         String template[] = {
             "@SP",
             "AM=M-1",
-            "D+M",
+            "D=M",
             "A=A-1",
-            "D=M-D",
+            "D=D-M",
             "@FALSE" + jumpFlag,
             "D;" + type,
             "@SP",
             "A=M-1",
-            "M=-1",
+            "M=0",
             "@CONTINUE" + jumpFlag,
             "0;JMP",
             "(FALSE" + jumpFlag +")",
             "@SP",
             "A=M-1",
-            "M=0",
+            "M=-1",
             "(CONTINUE" + jumpFlag + ")"
         };
                

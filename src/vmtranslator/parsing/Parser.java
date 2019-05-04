@@ -105,15 +105,27 @@ public class Parser {
      */
     public CommandType commandType() {
         // TODO Retiurn all types
+        // TODO Try switch
         
         String strs[] = currentCommand.split(" ");
-        
         if (arithmeticCommands.contains(strs[0])) {
             return CommandType.C_ARITHMETIC;
         } else if (currentCommand.contains("push")) {
             return CommandType.C_PUSH;
         } else if (currentCommand.contains("pop")) {
             return CommandType.C_POP;
+        } else if (currentCommand.contains("label")) {
+            return CommandType.C_LABEL;
+        } else if (currentCommand.contains("goto")) {
+            return CommandType.C_GOTO;
+        } else if (currentCommand.contains("if-goto")) {
+            return CommandType.C_IF;
+        } else if (currentCommand.contains("function")) {
+            return CommandType.C_FUNCTION;
+        } else if (currentCommand.contains("return")) {
+            return CommandType.C_RETURN;
+        } else if (currentCommand.contains("call")) {
+            return CommandType.C_CALL;
         }
         
         return null;
@@ -125,7 +137,8 @@ public class Parser {
      * @return First argument of the current command.
      */
     public String arg1() {
-        String strs[] = currentCommand.split(" ");
+        String unCommend[] = currentCommand.split("//");
+        String strs[] = unCommend[0].split(" ");
         
         if (strs.length > 1)
             return strs[1];
